@@ -18,6 +18,10 @@ import * as Resentry from "meteor-resentry/lib/server";
 Resentry.init(Meteor.settings.public.sentry, Meteor);
 ```
 
+### Sentry versions
+@sentry/browser version is currently limited to ^7. v8 makes Meteor crash with wrong
+modules load order.
+
 ## Configuration
 
 ```json5

@@ -2,6 +2,7 @@
  * Catch errors to Sentry
  */
 import * as Sentry from "@sentry/node";
+import type * as SentryTypes from "@sentry/types";
 
 import type {MeteorStub, SentryInitOptions} from "../types";
 
@@ -41,20 +42,24 @@ export function init(options: SentryInitOptions): void {
 		ignoreErrors.push(...options.ignoreErrors);
 	}
 
-	const integrations = Sentry.getDefaultIntegrations({
-
-	});
-	// Seems to break Meteor's console.error
-	// integrations.push(Sentry.captureConsoleIntegration());
-
-	Sentry.init({
+	const sentryOptions: Sentry.NodeOptions = {
 		dsn: options.dsn,
 		release: options.release || Meteor.settings.public.version || "0.0.1",
 		environment: 'server',
 
+		integrations: Sentry.getDefaultIntegrations({}),
+
 		ignoreErrors,
-		//integrations,
-	});
+	};
+
+	if(options.integrations) {
+		(sentryOptions.integrations as SentryTypes.Integration[]).push(...options.integrations);
+	}
+
+	// Seems to break Meteor's console.error
+	// integrations.push(Sentry.captureConsoleIntegration());
+
+	Sentry.init(sentryOptions);
 
 	// Catch-all Server's errors (seems not required, Sentry does this)
 	/*

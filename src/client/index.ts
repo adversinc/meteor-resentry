@@ -4,11 +4,26 @@
  */
 
 import * as Sentry from "@sentry/browser";
+import type * as SentryTypes from "@sentry/types";
 import type {MeteorStub, SentryInitOptions} from "../types";
 
 let initOptions: SentryInitOptions;
 
 declare var Meteor: MeteorStub;
+
+const DefaultIgnoreErrors: (RegExp|string)[] = [
+	/Skipping downloading new version because the Cordova/,
+	/No callback invoker/,
+	/Error in Success callbackId: WebAppLocalServer/,
+	/Can't select in removed DomRange/, // FIXME!
+	/Non-success status code 404 for asset.*map/, // Source maps not found in Cordova
+	/Cannot read properties of undefined \(reading 'connected'\)/,
+	/instantSearchSDKJSBridgeClearHighlight/,
+	/AbortError/,
+	/script error\./i,
+	/@webkit-masked-url/, // WebKit extension errors
+	/Error syncing to server time/, // Happens on server restart
+];
 
 function beforeSend(event: Sentry.ErrorEvent, hint: Sentry.EventHint): Sentry.ErrorEvent | PromiseLike<Sentry.ErrorEvent> {
 	if(Meteor?.isDevelopment) {
@@ -38,46 +53,40 @@ export function init(options: SentryInitOptions): void {
 			console.warn("Sentry forcefully enabled for browser");
 		}
 
-		const integrations = Sentry.getDefaultIntegrations({});
-		//integrations.push(Sentry.browserTracingIntegration());
-		integrations.push(Sentry.captureConsoleIntegration({
-			levels: ["error"]
-		}));
-
-		const ignoreErrors: (RegExp|string)[] = [
-			/Skipping downloading new version because the Cordova/,
-			/No callback invoker/,
-			/Error in Success callbackId: WebAppLocalServer/,
-			/Can't select in removed DomRange/, // FIXME!
-			/Non-success status code 404 for asset.*map/, // Source maps not found in Cordova
-			/Cannot read properties of undefined \(reading 'connected'\)/,
-			/instantSearchSDKJSBridgeClearHighlight/,
-			/AbortError/,
-			/script error\./i,
-			/@webkit-masked-url/, // WebKit extension errors
-			/Error syncing to server time/, // Happens on server restart
-		];
-		if(options.ignoreErrors) {
-			ignoreErrors.push(...options.ignoreErrors);
-		}
-
-		Sentry.init({
+		const sentryOptions: Sentry.BrowserOptions = {
 			dsn: options.dsn,
 			release: options.release || Meteor.settings.public.version || "0.0.1",
 			environment: 'client',
 			debug: options.debug,
 
-			ignoreErrors,
-			integrations,
+			ignoreErrors: DefaultIgnoreErrors,
+			integrations: Sentry.getDefaultIntegrations({}),
 			beforeSend,
 
 			// We recommend adjusting this value in production, or using tracesSampler
 			// for finer control
-			tracesSampleRate: 1.0,
+			tracesSampleRate: options.tracesSampleRate || 1.0,
+		};
 
-			// Set `tracePropagationTargets` to control for which URLs trace propagation should be enabled
-			tracePropagationTargets: ["localhost", /^https:\/\/www\.e2l-net\.com/],
-		});
+		(sentryOptions.integrations as SentryTypes.Integration[]).push(Sentry.captureConsoleIntegration({
+			levels: ["error"]
+		}));
+
+		if(options.integrations) {
+			(sentryOptions.integrations as SentryTypes.Integration[]).push(...options.integrations);
+		}
+
+		if(options.ignoreErrors) {
+			sentryOptions.ignoreErrors.push(...options.ignoreErrors);
+		}
+
+		if(options.tracePropagationTargets) {
+			sentryOptions.tracePropagationTargets = options.tracePropagationTargets;
+		}
+
+		//
+		// Init Sentry
+		Sentry.init(sentryOptions);
 
 		const oldLog = console.log;
 

@@ -1,7 +1,11 @@
+import type * as Sentry from '@sentry/types';
 export interface SentryInitOptions {
     dsn: string;
     release: string;
     ignoreErrors?: (RegExp | string)[];
+    integrations?: Sentry.Integration[];
+    tracesSampleRate?: number;
+    tracePropagationTargets?: string[];
     forceEnable?: boolean;
     debug?: boolean;
 }
