@@ -34,7 +34,13 @@ function beforeSend(event: Sentry.ErrorEvent, hint: Sentry.EventHint): Sentry.Er
 		//console.log("[SENTRY2] beforeSend:", JSON.stringify(event), event);
 	}
 
-	if(hint?.syntheticException?.stack?.includes("twk-chunk")) {
+	const tawkURLPart = "twk-chunk";
+
+	if(hint?.syntheticException?.stack?.includes(tawkURLPart)) {
+		return null;
+	}
+
+	if(event.exception?.values?.find(v => v.stacktrace?.frames?.find(f => f.filename?.includes(tawkURLPart)))) {
 		return null;
 	}
 
