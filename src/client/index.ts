@@ -75,7 +75,7 @@ export function init(options: SentryInitOptions): void {
 		// 20250512 - added own enableConsoleErrorEnrich integration
 		if(!options.enrichConsoleErrors) {
 			if(Meteor.isDevelopment) {
-				console.warn("enableConsoleErrorEnrich is recommended over captureConsoleIntegration");
+				console.warn("enrichConsoleErrors is recommended over captureConsoleIntegration");
 			}
 
 			(sentryOptions.integrations as SentryTypes.Integration[]).push(Sentry.captureConsoleIntegration({
