@@ -15,6 +15,9 @@ export function wrapErrorWithStackIntegration(options: CaptureConsoleOptions = {
 
 	return {
 		name: INTEGRATION_NAME,
+
+		setupOnce() {},
+
 		setup(client) {
 			const originalConsoleError: ConsoleError = console.error;
 

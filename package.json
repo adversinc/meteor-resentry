@@ -1,6 +1,6 @@
 {
   "name": "@advers/meteor-resentry",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Sentry abstraction layer for MeteorJS",
   "private": false,
   "main": "./lib/index.js",
