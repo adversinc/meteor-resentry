@@ -7,6 +7,10 @@ import * as Sentry from "@sentry/browser";
 import type * as SentryTypes from "@sentry/types";
 import type {MeteorStub, SentryInitOptions} from "../types";
 
+import { wrapErrorWithStackIntegration } from "./wrapErrorWithStack";
+
+export * as Sentry from "@sentry/browser";
+
 let initOptions: SentryInitOptions;
 
 declare var Meteor: MeteorStub;
@@ -27,7 +31,7 @@ const DefaultIgnoreErrors: (RegExp|string)[] = [
 
 function beforeSend(event: Sentry.ErrorEvent, hint: Sentry.EventHint): Sentry.ErrorEvent | PromiseLike<Sentry.ErrorEvent> {
 	if(Meteor?.isDevelopment) {
-		console.log("[SENTRY] beforeSend:", hint?.syntheticException?.stack?.includes("app.js"));
+		//console.log("[SENTRY2] beforeSend:", JSON.stringify(event), event);
 	}
 
 	if(hint?.syntheticException?.stack?.includes("twk-chunk")) {
@@ -68,9 +72,16 @@ export function init(options: SentryInitOptions): void {
 			tracesSampleRate: options.tracesSampleRate || 1.0,
 		};
 
-		(sentryOptions.integrations as SentryTypes.Integration[]).push(Sentry.captureConsoleIntegration({
-			levels: ["error"]
-		}));
+		// 20250512 - added own enableConsoleErrorEnrich integration
+		if(!options.enrichConsoleErrors) {
+			if(Meteor.isDevelopment) {
+				console.warn("enableConsoleErrorEnrich is recommended over captureConsoleIntegration");
+			}
+
+			(sentryOptions.integrations as SentryTypes.Integration[]).push(Sentry.captureConsoleIntegration({
+				levels: ["error"]
+			}));
+		}
 
 		if(options.integrations) {
 			(sentryOptions.integrations as SentryTypes.Integration[]).push(...options.integrations);
@@ -82,6 +93,11 @@ export function init(options: SentryInitOptions): void {
 
 		if(options.tracePropagationTargets) {
 			sentryOptions.tracePropagationTargets = options.tracePropagationTargets;
+		}
+
+		if(options.enrichConsoleErrors) {
+			sentryOptions.integrations ||= [];
+			(sentryOptions.integrations as SentryTypes.Integration[]).push(wrapErrorWithStackIntegration());
 		}
 
 		//
@@ -121,22 +137,6 @@ export function init(options: SentryInitOptions): void {
 
 			oldLog.apply(console, arguments);
 		};
-
-		// Catch actual console errors
-		// Not required since captureConsoleIntegration() now does this
-		// const oldError = console.error;
-		/* console.error = function(message) {
-			try {
-				for(let i = 1; i < arguments.length; i++) {
-					message += "\n\n" + JSON.stringify(arguments[i]);
-				}
-			} catch(ex) {
-				message += " (error adding args: " + ex.toString() + ")";
-			}
-
-			reportError(message);
-			oldError.apply(console, arguments);
-		};  */
 	}
 }
 
@@ -161,5 +161,4 @@ function reportError(message, ex = null) {
 function captureException(exception: Error) {
 	Sentry.captureException(exception);
 }
-
 

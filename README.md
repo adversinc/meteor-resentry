@@ -37,6 +37,10 @@ modules load order.
 
   // Optional, forces to enable Sentry (by default, Sentry disabled in development)
   forceEnable: false,
+
+  // Add call stack info to console.errors (and report them to Sentry)
+  // This disables (replaces) the default Sentry ConsoleIntegration
+  enrichConsoleErrors: true,
   
   // Optional, extra logging is enabled
   debug: false,

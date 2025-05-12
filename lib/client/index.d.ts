@@ -3,4 +3,5 @@
  * and forward them to Sentry
  */
 import type { SentryInitOptions } from "../types";
+export * as Sentry from "@sentry/browser";
 export declare function init(options: SentryInitOptions): void;

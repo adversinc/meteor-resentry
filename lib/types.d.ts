@@ -4,6 +4,7 @@ export interface SentryInitOptions {
     release: string;
     ignoreErrors?: (RegExp | string)[];
     integrations?: Sentry.Integration[];
+    enrichConsoleErrors?: boolean;
     tracesSampleRate?: number;
     tracePropagationTargets?: string[];
     forceEnable?: boolean;

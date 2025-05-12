@@ -9,6 +9,8 @@ export interface SentryInitOptions {
 
 	// Additional integrations
 	integrations?: Sentry.Integration[];
+	// Add call stacks to console.errors
+	enrichConsoleErrors?: boolean;
 
 	// Performance
 	tracesSampleRate?: number;
